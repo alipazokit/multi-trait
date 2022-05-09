@@ -15,4 +15,4 @@ IF (NOT DEFINED DEBUG)
 ENDIF()
 ADD_DEFINITIONS(-DDEBUG=${DEBUG})
 
-add_executable(RHEmc_mem src/rhemc_multiphen_nose.cpp src/genotype.cpp src/storage.cpp)
+add_executable(MTMA_VC src/rhemc_multiphen_nose.cpp src/genotype.cpp src/storage.cpp)

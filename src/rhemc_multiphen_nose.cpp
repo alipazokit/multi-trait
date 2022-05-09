@@ -592,6 +592,7 @@ void read_pheno2(int Nind, std::string filename){
 			phenocount++; 
 	}
 	pheno.resize(Nind, phenocount);
+	new_pheno.resize(Nind,phenocount);
 	mask.resize(Nind, phenocount);
 	int i=0;  
 	while(std::getline(ifs, line)){
@@ -698,11 +699,11 @@ MatrixXdr  compute_XXz (int num_snp){
 	   for(int j=0;j<Nindv;j++)
 		 all_zb(j,i)=all_zb(j,i)*mask(j,0);
 */
-         res.resize(num_snp, Nz);
+         res.resize(num_snp, Nz*phenocount);
 
         
 	if(use_mailman==true)
-		multiply_y_pre_fast(all_zb,Nz,res, false);
+		multiply_y_pre_fast(all_zb,Nz*phenocount,res, false);
 	else	
         	res=gen*all_zb;
    
@@ -711,28 +712,28 @@ MatrixXdr  compute_XXz (int num_snp){
         
 
 	for(int j=0; j<num_snp; j++)
-            for(int k=0; k<Nz;k++)
+            for(int k=0; k<(Nz*phenocount);k++)
                 res(j,k) = res(j,k)*stds(j,0);
             
-        MatrixXdr resid(num_snp, Nz);
+        MatrixXdr resid(num_snp, Nz*phenocount);
         MatrixXdr inter = means.cwiseProduct(stds);
         resid = inter * zb_sum;
         MatrixXdr inter_zb = res - resid;
        
 
-	for(int k=0; k<Nz; k++)
+	for(int k=0; k<(Nz*phenocount); k++)
             for(int j=0; j<num_snp;j++)
                 inter_zb(j,k) =inter_zb(j,k) *stds(j,0);
        MatrixXdr new_zb = inter_zb.transpose();
-       MatrixXdr new_res(Nz, Nindv);
+       MatrixXdr new_res(Nz*phenocount, Nindv);
        
 	
 	 if(use_mailman==true)
-	    multiply_y_post_fast(new_zb, Nz, new_res, false);
+	    multiply_y_post_fast(new_zb, Nz*phenocount, new_res, false);
 	 else
 	    new_res=new_zb*gen;	
 
-       MatrixXdr new_resid(Nz, num_snp);
+       MatrixXdr new_resid(Nz*phenocount, num_snp);
        MatrixXdr zb_scale_sum = new_zb * means;
        new_resid = zb_scale_sum * MatrixXdr::Constant(1,Nindv, 1);
 
@@ -740,9 +741,10 @@ MatrixXdr  compute_XXz (int num_snp){
                       /// new zb 
        MatrixXdr temp=new_res - new_resid;
 
+       for(int k=0;k<phenocount;k++)
 	for (int i=0;i<Nz;i++)
            for(int j=0;j<Nindv;j++)
-                 temp(i,j)=temp(i,j)*mask(j,0);
+                 temp((k*Nz)+i,j)=temp((k*Nz)+i,j)*mask(j,k);
 
 
 	return temp.transpose();
@@ -761,11 +763,11 @@ MatrixXdr  compute_XXUz (int num_snp){
            for(int j=0;j<Nindv;j++)
                  all_Uzb(j,i)=all_Uzb(j,i)*mask(j,0);
 */
-         res.resize(num_snp, Nz);
+         res.resize(num_snp, Nz*phenocount);
 
 
         if(use_mailman==true)
-                multiply_y_pre_fast(all_Uzb,Nz,res, false);
+                multiply_y_pre_fast(all_Uzb,Nz*phenocount,res, false);
         else
                 res=gen*all_Uzb;
   
@@ -774,28 +776,28 @@ MatrixXdr  compute_XXUz (int num_snp){
 
 
         for(int j=0; j<num_snp; j++)
-            for(int k=0; k<Nz;k++)
+            for(int k=0; k<(Nz*phenocount);k++)
                 res(j,k) = res(j,k)*stds(j,0);
 
-        MatrixXdr resid(num_snp, Nz);
+        MatrixXdr resid(num_snp, Nz*phenocount);
         MatrixXdr inter = means.cwiseProduct(stds);
         resid = inter * zb_sum;
         MatrixXdr inter_zb = res - resid;
 
 
-        for(int k=0; k<Nz; k++)
+        for(int k=0; k<(Nz*phenocount); k++)
             for(int j=0; j<num_snp;j++)
                 inter_zb(j,k) =inter_zb(j,k) *stds(j,0);
        MatrixXdr new_zb = inter_zb.transpose();
-       MatrixXdr new_res(Nz, Nindv);
+       MatrixXdr new_res(Nz*phenocount, Nindv);
 
 
          if(use_mailman==true)
-            multiply_y_post_fast(new_zb, Nz, new_res, false);
+            multiply_y_post_fast(new_zb, Nz*phenocount, new_res, false);
          else
             new_res=new_zb*gen;
 
-       MatrixXdr new_resid(Nz, num_snp);
+       MatrixXdr new_resid(Nz*phenocount, num_snp);
        MatrixXdr zb_scale_sum = new_zb * means;
        new_resid = zb_scale_sum * MatrixXdr::Constant(1,Nindv, 1);
 
@@ -803,9 +805,10 @@ MatrixXdr  compute_XXUz (int num_snp){
                       /// new zb 
        MatrixXdr temp=new_res - new_resid;
 
-        for (int i=0;i<Nz;i++)
+	for(int k=0;k<phenocount;k++)
+          for (int i=0;i<Nz;i++)
            for(int j=0;j<Nindv;j++)
-                 temp(i,j)=temp(i,j)*mask(j,0);
+                 temp((k*Nz)+i,j)=temp((k*Nz)+i,j)*mask(j,k);
 
 
         return temp.transpose();
@@ -1490,7 +1493,8 @@ MatrixXdr vec1;
 MatrixXdr w1;
 MatrixXdr w2;
 MatrixXdr w3;
-
+MatrixXdr mat_mask;
+MatrixXdr temp_cov;
 MatrixXdr  A_trs(Nbin,Nbin);
 MatrixXdr b_trk(Nbin,1);
 MatrixXdr c_yky(Nbin,1);
@@ -1505,22 +1509,22 @@ double trkij;
 MatrixXdr all_yy=(pheno.array() * pheno.array()).colwise().sum();
 
 if(both_side_cov==true){
-MatrixXdr Wty=covariate.transpose()*pheno; //W^ty
-MatrixXdr QWty=Q*Wty;
-MatrixXdr temp=(Wty.array() * QWty.array()).colwise().sum();
-        all_yy=all_yy-temp;
-}
 
+   for(int i=0;i<phenocount;i++){
+	mat_mask=mask.col(i).replicate(1,cov_num);
+	temp_cov=covariate.cwiseProduct(mat_mask);
+
+	MatrixXdr Wty=temp_cov.transpose()*pheno.col(i); //W^ty
+	MatrixXdr QWty=Q*Wty;
+	double temp=(Wty.array() * QWty.array()).sum();
+        all_yy(0,i)=all_yy(0,i)-temp;
+
+   }
+}
 
 
 MatrixXdr herit;
 
-
-/*MatrixXdr jack;
-MatrixXdr point_est;
-MatrixXdr enrich_jack;
-MatrixXdr enrich_point_est;
-*/
 jack.resize(Nbin+1,Njack);
 all_point_est.resize(Nbin+1,phenocount);
 point_est.resize(Nbin+1,1);
@@ -1537,7 +1541,7 @@ double trkij_res2;
 double trkij_res3;
 double tk_res;
 
-
+int temp_sze=Nbin*Nz*2;
 
 
 for (int jack_index=0;jack_index<Njack;jack_index++){	
@@ -1616,42 +1620,50 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
 
 	 output=compute_XXz(num_snp);
 
+	 temp_sze=Nbin*Nz*2;
+	for(int phen_index=0;phen_index<phenocount;phen_index++){
 	   for (int z_index=0;z_index<Nz;z_index++){
 		//if(num_snp!=len[bin_index])
                  //XXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index)=output.col(z_index);
                  if(pass_num==1)
-		         XXz.col((bin_index*2*Nz)+Nz+z_index)+=output.col(z_index);   /// save whole sample
+		         XXz.col((phen_index*temp_sze)+(bin_index*2*Nz)+Nz+z_index)+=output.col((Nz*phen_index)+z_index);   /// save whole sample
 		 else
-			 XXz.col((bin_index*2*Nz)+z_index)=XXz.col((bin_index*2*Nz)+Nz+z_index)-output.col(z_index);   /// save corresponding jack contrib
+			 XXz.col((phen_index*temp_sze)+(bin_index*2*Nz)+z_index)=XXz.col((phen_index*temp_sze)+(bin_index*2*Nz)+Nz+z_index)-output.col((Nz*phen_index)+z_index);   /// save corresponding jack contrib
 
 		 if(both_side_cov==true) {
-		  vec1=output.col(z_index);
-		  w1=covariate.transpose()*vec1;
+		  vec1=output.col((Nz*phen_index)+z_index);
+		  mat_mask=mask.col(phen_index).replicate(1,cov_num);
+     		  temp_cov=covariate.cwiseProduct(mat_mask);
+
+		  w1=temp_cov.transpose()*vec1;
                   w2=Q*w1;
-                  w3=covariate*w2;
+                  w3=temp_cov*w2;
 		  //if(num_snp!=len[bin_index])
 		  //UXXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index)=w3;
 		  if(pass_num==1)
-		     UXXz.col((bin_index*2*Nz)+Nz+z_index)+=w3;
+		     UXXz.col((phen_index*temp_sze)+(bin_index*2*Nz)+Nz+z_index)+=w3;
 		  else
-		     UXXz.col((bin_index*2*Nz)+z_index)=UXXz.col((bin_index*2*Nz)+Nz+z_index)-w3;
+		     UXXz.col((phen_index*temp_sze)+(bin_index*2*Nz)+z_index)=UXXz.col((phen_index*temp_sze)+(bin_index*2*Nz)+Nz+z_index)-w3;
 
 		 }
 
             }
+        }
 
 	   if (both_side_cov==true){
 	      output=compute_XXUz(num_snp); 
-	      for (int z_index=0;z_index<Nz;z_index++){
-           //        if(num_snp!=len[bin_index])
-	//	   XXUz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index)=output.col(z_index);
-                if(pass_num==1)
-		   XXUz.col((bin_index*2*Nz)+Nz+z_index)+=output.col(z_index);   /// save whole sample
-	        else
-		    XXUz.col((bin_index*2*Nz)+z_index)=XXUz.col((bin_index*2*Nz)+Nz+z_index)-output.col(z_index);
-	      }	 
+	     	for(int phen_index=0;phen_index<phenocount;phen_index++){
+	     	 for (int z_index=0;z_index<Nz;z_index++){
+        	      	    // if(num_snp!=len[bin_index])
+			   //XXUz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index)=output.col(z_index);
+          	      if(pass_num==1)
+			   XXUz.col((phen_index*temp_sze)+(bin_index*2*Nz)+Nz+z_index)+=output.col((Nz*phen_index)+z_index);   /// save whole sample
+		        else
+			    XXUz.col((phen_index*temp_sze)+(bin_index*2*Nz)+z_index)=XXUz.col((phen_index*temp_sze)+(bin_index*2*Nz)+Nz+z_index)-output.col((Nz*phen_index)+z_index);
+	        }
+	      }
+	 
 	  }
-		   
 	//compute yXXy
 		MatrixXdr temp_yxxy;
 	   if(both_side_cov==false)
@@ -1664,15 +1676,6 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
 	  //else  
 	  //	yXXy.block(bin_index*phenocount,0,phenocount,1)=yXXy.block(bin_index*phenocount,1,phenocount,1)-temp_yxxy.transpose();
 	  
-	/*
-	if(pass_num==1)
-           yXXy(bin_index,1)+=temp_yxxy;
-	  else
-	     yXXy(bin_index,0)= yXXy(bin_index,1)-temp_yxxy;
-	   //if(num_snp==len[bin_index])
-	//	yXXy(bin_index,jack_index)=0;
-
-	*/
 	cout<<num_snp<< "SNPs in bin "<<bin_index<<"of jack "<<jack_index<<endl;   
 	cout<<" Reading and computing bin "<<bin_index <<"  of "<< jack_index<<"-th is finished"<<endl;
 	   
@@ -1707,154 +1710,35 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
         }
 
      }
-//cout<<" Reading and computing  of "<< jack_index<<"-th is finished"<<endl;
-/*
-if(pass_num!=1){
-   
-for (int i=0;i<Nbin;i++){
-
-	if(both_side_cov==false)	
-             b_trk(i,0)=Nindv_mask;
-
-	if( jack_index<Njack && len[i]==jack_bin[jack_index][i])
-		 jack_bin[jack_index][i]=0;
-
-
-        //if(jack_index==Njack)
-        //c_yky(i,0)=yXXy(i,0)/len[i];
-        //else
-        c_yky(i,0)=yXXy(i,0)/(len[i]-jack_bin[jack_index][i]);
-  
-       
-	if(both_side_cov==true){
-	B1=XXz.block(0,(i*2*Nz),Nindv,Nz);
-	C1=B1.array()*all_Uzb.array();
-        C2=C1.colwise().sum();	
-	tk_res=C2.sum();  
-
-	//if(jack_index==Njack)
-          //  tk_res=tk_res/len[i]/Nz;
-        //else
-           tk_res=tk_res/(len[i]-jack_bin[jack_index][i])/Nz;
-
-        b_trk(i,0)=Nindv_mask-tk_res;
-	}
-
-       for (int j=i;j<Nbin;j++){
-                B1=XXz.block(0,(i*2*Nz),Nindv,Nz);
-                B2=XXz.block(0,(j*2*Nz),Nindv,Nz);
-                C1=B1.array()*B2.array();
-                C2=C1.colwise().sum();
-                trkij=C2.sum();
-
-
-		if(both_side_cov==true){
-
-			h1=covariate.transpose()*B1;
-                        h2=Q*h1;
-                        h3=covariate*h2;
-			C1=h3.array()*B2.array();
-		        C2=C1.colwise().sum();
-                        trkij_res1=C2.sum();
-
-
-			B1=XXUz.block(0,(i*2*Nz),Nindv,Nz);
-               	        B2=UXXz.block(0,(j*2*Nz),Nindv,Nz);
-                        C1=B1.array()*B2.array();
-                        C2=C1.colwise().sum();
-                        trkij_res3=C2.sum();
-
-			
-			trkij+=trkij_res3-trkij_res1-trkij_res1 ;
-			
-	     }
-
-
-                //if(jack_index==Njack)
-              //  trkij=trkij/len[i]/len[j]/Nz;
-                //else
-                 trkij=trkij/(len[i]-jack_bin[jack_index][i])/(len[j]-jack_bin[jack_index][j])/Nz;
-                A_trs(i,j)=trkij;
-                A_trs(j,i)=trkij;
-
-        }
-  }
-
-
-X_l<<A_trs,b_trk,b_trk.transpose(),NC;
-Y_r<<c_yky,all_yy.col(0);
-
- herit=X_l.colPivHouseholderQr().solve(Y_r);
-
-for(int i=0;i<(Nbin+1);i++)
-      jack(i,jack_index)=herit(i,0);
-
-
-
-
-
-
-
-} //end if pass_num!=1
-*/
-
 
 }//end loop over jack
 cout<<" Reading and computing  of all blocks are finished"<<endl;
 
-/*
 if(pass_num==1){
-  //handle when jackknife block does not include any SNPs from a bin//refill
-
-  for (int bin_index=0;bin_index<Nbin;bin_index++){
-	 for (int z_index=0;z_index<Nz;z_index++){
-		  XXz.col((bin_index*2*Nz)+z_index)=XXz.col((bin_index*2*Nz)+Nz+z_index);
-		  if(both_side_cov==true){
-		  UXXz.col((bin_index*2*Nz)+z_index)=UXXz.col((bin_index*2*Nz)+Nz+z_index);
-		  XXUz.col((bin_index*2*Nz)+z_index)=XXUz.col((bin_index*2*Nz)+Nz+z_index);  
-       		  }
-	 }
-        yXXy(bin_index,0)= yXXy(bin_index,1);
-  }
-}
-*/
-if(pass_num==1){
-for (int i=0;i<Nbin;i++){
-	//c_yky(i,0)=yXXy(i,1)/len[i];
-	
-	 //if(both_side_cov==false)
-           //  b_trk(i,0)=Nindv_mask;
-
-	 /*if(both_side_cov==true){
-        	B1=XXz.block(0,(i*2*Nz)+Nz,Nindv,Nz);
-        	C1=B1.array()*all_Uzb.array();
-        	C2=C1.colwise().sum();
-        	tk_res=C2.sum();
-                tk_res=tk_res/len[i]/Nz;
-        
-                 b_trk(i,0)=tk_res*-1;  //changed
-        }
-	*/
+for (int rep_index=0 ; rep_index<phenocount; rep_index++){
+        cout<<"pheno: "<<rep_index<<endl;
+	for (int i=0;i<Nbin;i++){
 	for (int j=i;j<Nbin;j++){
-                B1=XXz.block(0,(i*2*Nz)+Nz,Nindv,Nz);
-                B2=XXz.block(0,(j*2*Nz)+Nz,Nindv,Nz);
+                B1=XXz.block(0,(rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
+                B2=XXz.block(0,(rep_index*temp_sze)+(j*2*Nz)+Nz,Nindv,Nz);
                 C1=B1.array()*B2.array();
                 C2=C1.colwise().sum();
                 trkij=C2.sum();
                 
-
                 if(both_side_cov==true){
-                
-                        h1=covariate.transpose()*B1;
+			mat_mask=mask.col(rep_index).replicate(1,cov_num);
+                        temp_cov=covariate.cwiseProduct(mat_mask);                
+
+                        h1=temp_cov.transpose()*B1;
                         h2=Q*h1;
-                        h3=covariate*h2;
+                        h3=temp_cov*h2;
                         C1=h3.array()*B2.array();
                         C2=C1.colwise().sum();
                         trkij_res1=C2.sum();
                         
 
-                        B1=XXUz.block(0,(i*2*Nz)+Nz,Nindv,Nz);
-                        B2=UXXz.block(0,(j*2*Nz)+Nz,Nindv,Nz);
+                        B1=XXUz.block(0,(rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
+                        B2=UXXz.block(0,(rep_index*temp_sze)+(j*2*Nz)+Nz,Nindv,Nz);
                         C1=B1.array()*B2.array();
                         C2=C1.colwise().sum();
                         trkij_res3=C2.sum();
@@ -1869,18 +1753,17 @@ for (int i=0;i<Nbin;i++){
                 A_trs(j,i)=trkij;
                 
         }
-}     
+      }     
   
 
-for (int rep_index=0 ; rep_index<phenocount; rep_index++){
-	cout<<"pheno: "<<rep_index<<endl;
-	for (int i=0;i<Nbin;i++){
+      for (int i=0;i<Nbin;i++){
 		c_yky(i,0)=yXXy((i*phenocount)+rep_index,0)/len[i];	
 		b_trk(i,0)=mask.col(rep_index).sum();
 
 		if(both_side_cov==true){
-                B1=XXz.block(0,(i*2*Nz)+Nz,Nindv,Nz);
-                C1=B1.array()*all_Uzb.array();
+                B1=XXz.block(0,(rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
+		MatrixXdr sub_allU=all_Uzb.block(0,Nz*rep_index,Nindv,Nz);
+                C1=B1.array()*sub_allU.array();
                 C2=C1.colwise().sum();
                 tk_res=C2.sum();
                 tk_res=tk_res/len[i]/Nz; 
@@ -1899,8 +1782,9 @@ for (int rep_index=0 ; rep_index<phenocount; rep_index++){
 
 	herit=X_l.colPivHouseholderQr().solve(Y_r);
 
-	cout<<"Xl"<<X_l<<endl;
-	cout<<"Yl"<<Y_r<<endl;
+	cout<<"Normal Equation for phenotype "<<rep_index<<endl;
+	cout<<"Xl"<<endl<<X_l<<endl;
+	cout<<"Yl"<<endl<<Y_r<<endl;
    
 	for(int k=0;k<(Nbin+1);k++)
     		all_point_est(k,rep_index)=herit(k,0);
@@ -1908,8 +1792,6 @@ for (int rep_index=0 ; rep_index<phenocount; rep_index++){
 }
 
 }
-//cout<<"point estimates:"<<endl;
-//cout<<point_est<<endl;
 
 }
 
@@ -1987,6 +1869,8 @@ if (fam_lines!=Nindv)
 read_pheno2(Nindv,filename);
 cout<<"Number of Indvs :"<<Nindv<<endl;
 
+k=Nz*phenocount;
+
 std::string covfile=command_line_opts.COVARIATE_FILE_PATH;
 std::string covname="";
 if(covfile!=""){
@@ -2000,17 +1884,26 @@ else if(covfile==""){
 }
 /// regress out cov from phenotypes
 
-Eigen::VectorXd mean = pheno.colwise().mean();
-Eigen::VectorXd std = ((pheno.rowwise() - mean.transpose()).array().square().colwise().sum() / (pheno.rows() - 1)).sqrt();
-pheno=pheno.rowwise()-mean.transpose();
-pheno=pheno.array().rowwise()/std.transpose().array();
-pheno=pheno.cwiseProduct(mask);
+Eigen::VectorXd sums = pheno.colwise().sum();
+cout<<"sum of phenotypes"<<endl;
+cout<<sums<<endl;
+double single_mean;
+for (int i=0;i<phenocount;i++){
+      single_mean=sums(i)/mask.col(i).sum();
+      cout<<mask.col(i).sum()<<endl;
+      cout<<"mean of phenotype"<<i<<": "<<single_mean<<endl;
+   for(int j=0;j<Nindv;j++){
+	if(mask(j,i)==1)
+	    pheno(j,i)=pheno(j,i)-single_mean;
+  }
+}
 
-cout<<mean<<endl;
-cout<<std<<endl;
 
+MatrixXdr temp_cov;
+MatrixXdr mat_mask;
+MatrixXdr WtW;
 if(use_cov==true){
-MatrixXdr mat_mask=mask.col(0).replicate(1,cov_num);
+/*MatrixXdr mat_mask=mask.col(0).replicate(1,cov_num);
 covariate=covariate.cwiseProduct(mat_mask);
 
 MatrixXdr WtW= covariate.transpose()*covariate;
@@ -2022,12 +1915,28 @@ v2=Q*v1;            //QW^ty
 v3=covariate*v2;    //WQW^ty
 new_pheno=pheno-v3;
 new_pheno=new_pheno.cwiseProduct(mask);
+*///
+for (int i=0;i<phenocount;i++){
+     mat_mask=mask.col(i).replicate(1,cov_num);
+     temp_cov=covariate.cwiseProduct(mat_mask); 
+      WtW=temp_cov.transpose()*temp_cov;
+     Q=WtW.inverse();
+     v1=temp_cov.transpose()*pheno.col(i);
+     v2=Q*v1;
+     v3=temp_cov*v2;
+     new_pheno.col(i)=pheno.col(i)-v3;
+     new_pheno.col(i)=new_pheno.col(i).cwiseProduct(mask.col(i));	   
+}
+
+
 
 }
 	
 
-all_zb= MatrixXdr::Random(Nindv,Nz);
-all_zb = all_zb * sqrt(3);
+
+MatrixXdr temp_rand;
+temp_rand.resize(Nindv,Nz);
+all_zb= MatrixXdr::Random(Nindv,Nz*phenocount);
 
 boost::mt19937 seedr;
 seedr.seed(std::time(0));
@@ -2036,29 +1945,31 @@ boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > z_vec(s
 
 for (int i=0;i<Nz;i++)
    for(int j=0;j<Nindv;j++)
-      all_zb(j,i)=z_vec();
+      temp_rand(j,i)=z_vec();
 
 
 
+for(int k=0;k<phenocount;k++)
+   for(int i=0;i<Nz;i++)
+   	for(int j=0;j<Nindv;j++)
+   	   all_zb(j,(Nz*k)+i)=temp_rand(j,i)*mask(j,k);
 
-for (int i=0;i<Nz;i++)
-   for(int j=0;j<Nindv;j++)
-      all_zb(j,i)=all_zb(j,i)*mask(j,0);
-
-/*
-for (int i=0;i<Nindv;i++)
-for (int j=0;j<Nz;j++)
-        all_zb(i,j)=pheno(i,0);
-*/
 
 if(both_side_cov==true){
 
-all_Uzb.resize(Nindv,Nz);
-for (int j=0;j<Nz;j++){
- MatrixXdr w1=covariate.transpose()*all_zb.col(j);
- MatrixXdr w2=Q*w1;
- MatrixXdr w3=covariate*w2;
- all_Uzb.col(j)=w3;
+all_Uzb.resize(Nindv,Nz*phenocount);
+MatrixXdr w1;
+MatrixXdr w2;
+MatrixXdr w3;
+for(int k=0;k<phenocount;k++){
+	mat_mask=mask.col(k).replicate(1,cov_num);
+	temp_cov=covariate.cwiseProduct(mat_mask);
+	for (int j=0;j<Nz;j++){
+		  w1=temp_cov.transpose()*all_zb.col((Nz*k)+j);
+ 		  w2=Q*w1;
+		  w3=temp_cov*w2;
+ 		  all_Uzb.col((Nz*k)+j)=w3;
+	}
 }
 
 }
@@ -2070,11 +1981,11 @@ MatrixXdr output;
 //e
 //Njack=1;
 
-XXz=MatrixXdr::Zero(Nindv,Nbin*Nz*2);
+XXz=MatrixXdr::Zero(Nindv,phenocount*Nbin*Nz*2);
 
 if(both_side_cov==true){
-UXXz=MatrixXdr::Zero(Nindv,Nbin*Nz*2);
-XXUz=MatrixXdr::Zero(Nindv,Nbin*Nz*2);
+UXXz=MatrixXdr::Zero(Nindv,phenocount*Nbin*Nz*2);
+XXUz=MatrixXdr::Zero(Nindv,phenocount*Nbin*Nz*2);
 }
 yXXy=MatrixXdr::Zero(phenocount*Nbin,1);
 
@@ -2112,236 +2023,53 @@ string add_output=command_line_opts.OUTPUT_FILE_PATH;
 outfile.open(add_output.c_str(), std::ios_base::out);
 
 
-
-///compute h^2s
-for (int phen_index=0;phen_index<phenocount;phen_index++){
-std::ofstream outfile;
-string add_output=command_line_opts.OUTPUT_FILE_PATH;
-std::stringstream f4;
-f4<<add_output<<".phen"<<phen_index;
-add_output=f4.str();
-outfile.open(add_output.c_str(), std::ios_base::out);
-
-
-point_est=all_point_est.col(phen_index);
-
-MatrixXdr Sigmas=point_est;
-
 double temp_sig=0;
 double temp_sum=0;
-temp_sum=point_est.sum();
+MatrixXdr all_h2=all_point_est;
+for (int phen_index=0;phen_index<phenocount;phen_index++){
+temp_sum=all_h2.col(phen_index).sum();
+temp_sig=0;
 for (int j=0;j<Nbin;j++){
-        point_est(j,0)=point_est(j,0)/temp_sum;
-        temp_sig+=point_est(j,0);
+        all_h2(j,phen_index)=all_h2(j,phen_index)/temp_sum;
+        temp_sig+=all_h2(j,phen_index);
 }
-point_est(Nbin,0)=temp_sig;
+all_h2(Nbin,phen_index)=temp_sig;
 
-/*
-for (int i=0;i<Njack;i++){
-   temp_sig=0;
-   temp_sum=jack.col(i).sum();
-   for (int j=0;j<Nbin;j++){
-        jack(j,i)=jack(j,i)/temp_sum;
-        temp_sig+=jack(j,i);
-   }
-   jack(Nbin,i)=temp_sig;
-   //cout<<"jack"<<i<<" :"<<temp_sig<<endl;
 }
-////
-*/
-MatrixXdr Sigmas_se=MatrixXdr::Zero(Nbin+1,1);
-//jack_se(jack);
-cout<<endl<<"OUTPUT: "<<endl<<"Variances: "<<endl;
-outfile<<"OUTPUT: "<<endl<<"Variances: "<<endl;
-for (int j=0;j<Nbin;j++){
-        cout<<"Sigma^2_"<<j<<": "<<Sigmas(j,0)<<" ,  se: "<<Sigmas_se(j,0)<<endl;
-        outfile<<"Sigma^2_"<<j<<": "<<Sigmas(j,0)<<" ,  se: "<<Sigmas_se(j,0)<<endl;
-}
-cout<<"Sigma^2_e: "<<Sigmas(Nbin,0)<<" ,  se: "<<Sigmas_se(Nbin,0)<<endl;
-outfile<<"Sigma^2_e: "<<Sigmas(Nbin,0)<<" ,  se: "<<Sigmas_se(Nbin,0)<<endl;
 
 
-
-
-////compute h^2 based on ldsc definition
-MatrixXdr her_per_snp;
-MatrixXdr her_cat_ldsc;
-MatrixXdr point_her_cat_ldsc;;
-her_cat_ldsc=MatrixXdr::Zero(Nbin,Njack);
-MatrixXdr her_per_snp_inbin(Nbin,1);
-point_her_cat_ldsc=MatrixXdr::Zero(Nbin,1);
-
-for (int k=0;k<=Njack;k++){
-
-if(k==Njack){
+cout<<"Outputs: "<<endl<<endl;
+outfile<<"pheno ";
+cout<<"pheno ";
 for(int i=0;i<Nbin;i++){
-    her_per_snp_inbin(i,0)=(double)point_est(i,0)/len[i];
+outfile<<"sigma^2_"<<i<<" ";
+cout<<"sigma^2_"<<i<<" ";
 }
-}
-else{
+outfile<<"sigam^2_e"<<" ";
+cout<<"sigam^2_e"<<" ";
 for(int i=0;i<Nbin;i++){
-    her_per_snp_inbin(i,0)=(double)jack(i,k)/(len[i]-jack_bin[k][i]);
+outfile<<"h^2_"<<i<<" ";
+cout<<"h^2_"<<i<<" ";
 }
+outfile<<"h^2_T"<<endl;
+cout<<"h^2_T"<<endl;
+for (int phen_index=0;phen_index<phenocount;phen_index++){
+    cout<<phen_index<<" ";
+    for(int i=0;i<(Nbin+1);i++){
+     	cout<<all_point_est(i,phen_index)<<" ";
+        outfile<<all_point_est(i,phen_index)<<" ";  
+    }
+    for(int i=0;i<(Nbin+1);i++){
+        cout<<all_h2(i,phen_index)<<" ";
+        outfile<<all_h2(i,phen_index)<<" ";
+    }
+    cout<<endl;
+    outfile<<endl;
 
-}
-
-her_per_snp=MatrixXdr::Zero(Nsnp,1);
-
-for(int i=0;i<Nsnp;i++){
-   for(int j=0;j<Nbin;j++){
-      if(annot_bool[i][j]==1)
-             her_per_snp(i,0)+=her_per_snp_inbin(j,0);	     	  
-   }
-
-   if(k==Njack){
-
-   for(int j=0;j<Nbin;j++)
-      if(annot_bool[i][j]==1)
-             point_her_cat_ldsc(j,0)+=her_per_snp(i,0);
-   
-   }
-   else
-   {
-
-   for(int j=0;j<Nbin;j++)
-      if(annot_bool[i][j]==1)
-             her_cat_ldsc(j,k)+=her_per_snp(i,0);
-    
-   }
-
-}
 }
 
 
 
-
-MatrixXdr  se_her_cat_ldsc=MatrixXdr::Zero(Nbin+1,1);
-// jack_se(her_cat_ldsc);
-
-
-cout<<endl<<"h^2's (heritabilities) and e's (enrichments) are computed based on Equation 9 (overlapping setting) in the paper  https://doi.org/10.1038/s41467-020-17576-9:"<<endl;
-outfile<<endl<<"h^2's (heritabilities) and e's (enrichments) are computed based on Equation 9 (overlapping setting) in the paper  https://doi.org/10.1038/s41467-020-17576-9:"<<endl;
-
-cout<<endl<<"h^2's: "<<endl;
-outfile<<"h^2's: "<<endl;
-for (int j=0;j<Nbin;j++){
-     cout<<"h^2 of bin "<<j<<" : "<<point_her_cat_ldsc(j,0)<<" ,  se: "<<se_her_cat_ldsc(j,0)<<endl;
-     outfile<<"h^2 of bin "<<j<<" : "<<point_her_cat_ldsc(j,0)<<" ,  se: "<<se_her_cat_ldsc(j,0)<<endl;
-}
-
-
-///prop of h2 ldsc def
-
-for (int i=0;i<Nbin;i++)
-  point_her_cat_ldsc(i,0)=(double)point_her_cat_ldsc(i,0)/point_est(Nbin,0);
-
-for(int i=0;i<Njack;i++)
-   for(int j=0;j<Nbin;j++)
-	her_cat_ldsc(j,i)=(double)her_cat_ldsc(j,i)/jack(Nbin,i);	  
-
-
-////print prop of h2 
- se_her_cat_ldsc=MatrixXdr::Zero(Nbin+1,1);
-//jack_se(her_cat_ldsc);
-
-
-cout<<endl<<"h^2_i/h^2_t: "<<endl;
-outfile<<"h^2_i/h^2_t: "<<endl;
-for (int j=0;j<Nbin;j++){
-     cout<<"h^2/h^2_t of bin "<<j<<" : "<<point_her_cat_ldsc(j,0)<<",  se: "<<se_her_cat_ldsc(j,0)<<endl;
-     outfile<<"h^2/h^2_t of bin "<<j<<" : "<<point_her_cat_ldsc(j,0)<<",  se: "<<se_her_cat_ldsc(j,0)<<endl;
-}
-
-
-cout<<endl<<"Enrichments: "<<endl;
-outfile<<"Enrichments: "<<endl;
-for (int j=0;j<Nbin;j++){
-        double snp_por=(double)len[j]/Nsnp;
-     cout<<"Enrichment of bin "<<j<<" : "<<point_her_cat_ldsc(j,0)/snp_por<<",  se: "<<se_her_cat_ldsc(j,0)/snp_por<<endl;
-     outfile<<"Enrichment of bin "<<j<<" : "<<point_her_cat_ldsc(j,0)/snp_por<<",  se: "<<se_her_cat_ldsc(j,0)/snp_por<<endl;
-}
-
-
-
-///////////////////end h2 based on ldsc def
-
-
-
-
-
-///compute enrichment
-
-double per_her;
-double per_size;
-int total_size=0;
-
-//for (int i=0;i<Nbin;i++)
-  // total_size+=len[i];
-total_size=Nsnp;
-
-for (int j=0;j<Nbin;j++){
-        per_her=point_est(j,0)/point_est(Nbin,0);
-        per_size=(double)len[j]/total_size;
-        enrich_point_est(j,0)=per_her/per_size;
-        //cout<<j<<" "<<per_her<<" "<<total_size<<" "<<len[j]<<" "<<per_size<<" "<<enrich_point_est(j,0)<<endl;
-}
-
-
-for (int i=0;i<Njack;i++){
-    per_size=0;
-    /*total_size=0;
-    for (int j=0;j<Nbin;j++){
-        total_size+=(len[j]-jack_bin[i][j]);
-    } */
-
-   int num_snp_in_jack=(i<(Njack-1)) ? (step_size) : (step_size+step_size_rem);
-   total_size=Nsnp-num_snp_in_jack;
-   for (int j=0;j<Nbin;j++){
-        per_her=jack(j,i)/jack(Nbin,i);
-        per_size=(double)(len[j]-jack_bin[i][j])/total_size;
-        enrich_jack(j,i)=per_her/per_size;
-        }
-}
-
-
-
-//compute se if h2 and enirchment
-
-MatrixXdr SEjack;
-SEjack=MatrixXdr::Zero(Nbin+1,1);
-//SEjack=jack_se(jack);
-
-
-MatrixXdr enrich_SEjack;
-enrich_SEjack=MatrixXdr::Zero(Nbin,1);
-//enrich_SEjack=jack_se(enrich_jack);
-
-
-
-
-
-
-cout<<endl<<"h^2's (heritabilities) and e's (enrichments) are computed based on Equations 2-4 (non-overlapping setting) in the paper  https://doi.org/10.1038/s41467-020-17576-9:"<<endl;
-outfile<<endl<<"h^2's (heritabilities) and e's (enrichments) are computed based on Equations 2-4 (non-overlapping setting) in the paper  https://doi.org/10.1038/s41467-020-17576-9:"<<endl;
-
-cout<<endl<<"h^2's: "<<endl;
-outfile<<"h^2's: "<<endl;
-for (int j=0;j<Nbin;j++){
-     cout<<"h^2 of bin "<<j<<" : "<<point_est(j,0)<<",  se: "<<SEjack(j,0)<<endl;
-     outfile<<"h^2 of bin "<<j<<" : "<<point_est(j,0)<<",  se: "<<SEjack(j,0)<<endl;
-}
-cout<<"Total h^2 : "<<point_est(Nbin,0)<<", se: "<<SEjack(Nbin,0)<<endl;
-outfile<<"Total h^2 : "<<point_est(Nbin,0)<<", se: "<<SEjack(Nbin,0)<<endl;
-
-cout<<endl<<"Enrichments: "<<endl;
-outfile<<"Enrichments: "<<endl;
-for (int j=0;j<Nbin;j++){
-     cout<<"Enrichment of bin "<<j<<": "<<enrich_point_est(j,0)<<" ,  se: "<<enrich_SEjack(j,0)<<endl;
-     outfile<<"Enrichment of bin "<<j<<": "<<enrich_point_est(j,0)<<" ,  se: "<<enrich_SEjack(j,0)<<endl;
-}
-
-}
-////////////////////////////////////////////////////////
 
 	return 0;
 }

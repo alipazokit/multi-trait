@@ -1652,7 +1652,6 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
 	      }	 
 	  }
 		   
-	cout<<"aaaaaaaaaaaaaaa"<<endl;   
 	//compute yXXy
 		MatrixXdr temp_yxxy;
 	   if(both_side_cov==false)
@@ -1874,9 +1873,8 @@ for (int i=0;i<Nbin;i++){
   
 
 for (int rep_index=0 ; rep_index<phenocount; rep_index++){
-	cout<<rep_index<<endl;
+	cout<<"pheno: "<<rep_index<<endl;
 	for (int i=0;i<Nbin;i++){
-        	cout<<i<<" "<<phenocount <<" "<<rep_index<<endl;
 		c_yky(i,0)=yXXy((i*phenocount)+rep_index,0)/len[i];	
 		b_trk(i,0)=mask.col(rep_index).sum();
 
@@ -2151,7 +2149,8 @@ for (int i=0;i<Njack;i++){
 }
 ////
 */
-MatrixXdr Sigmas_se=jack_se(jack);
+MatrixXdr Sigmas_se=MatrixXdr::Zero(Nbin+1,1);
+//jack_se(jack);
 cout<<endl<<"OUTPUT: "<<endl<<"Variances: "<<endl;
 outfile<<"OUTPUT: "<<endl<<"Variances: "<<endl;
 for (int j=0;j<Nbin;j++){
@@ -2216,7 +2215,8 @@ for(int i=0;i<Nsnp;i++){
 
 
 
-MatrixXdr  se_her_cat_ldsc=jack_se(her_cat_ldsc);
+MatrixXdr  se_her_cat_ldsc=MatrixXdr::Zero(Nbin+1,1);
+// jack_se(her_cat_ldsc);
 
 
 cout<<endl<<"h^2's (heritabilities) and e's (enrichments) are computed based on Equation 9 (overlapping setting) in the paper  https://doi.org/10.1038/s41467-020-17576-9:"<<endl;
@@ -2241,7 +2241,8 @@ for(int i=0;i<Njack;i++)
 
 
 ////print prop of h2 
- se_her_cat_ldsc=jack_se(her_cat_ldsc);
+ se_her_cat_ldsc=MatrixXdr::Zero(Nbin+1,1);
+//jack_se(her_cat_ldsc);
 
 
 cout<<endl<<"h^2_i/h^2_t: "<<endl;
@@ -2308,12 +2309,12 @@ for (int i=0;i<Njack;i++){
 
 MatrixXdr SEjack;
 SEjack=MatrixXdr::Zero(Nbin+1,1);
-SEjack=jack_se(jack);
+//SEjack=jack_se(jack);
 
 
 MatrixXdr enrich_SEjack;
 enrich_SEjack=MatrixXdr::Zero(Nbin,1);
-enrich_SEjack=jack_se(enrich_jack);
+//enrich_SEjack=jack_se(enrich_jack);
 
 
 
