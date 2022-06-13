@@ -46,6 +46,8 @@ class data {
 };
 
 int phenocount=0;
+bool exact_pheno=false;
+int  num_dif_grm=0;
 //Intermediate Variables
 int blocksize;
 int hsegsize;
@@ -699,11 +701,11 @@ MatrixXdr  compute_XXz (int num_snp){
 	   for(int j=0;j<Nindv;j++)
 		 all_zb(j,i)=all_zb(j,i)*mask(j,0);
 */
-         res.resize(num_snp, Nz*phenocount);
+         res.resize(num_snp, Nz*num_dif_grm);
 
         
 	if(use_mailman==true)
-		multiply_y_pre_fast(all_zb,Nz*phenocount,res, false);
+		multiply_y_pre_fast(all_zb,Nz*num_dif_grm,res, false);
 	else	
         	res=gen*all_zb;
    
@@ -712,28 +714,28 @@ MatrixXdr  compute_XXz (int num_snp){
         
 
 	for(int j=0; j<num_snp; j++)
-            for(int k=0; k<(Nz*phenocount);k++)
+            for(int k=0; k<(Nz*num_dif_grm);k++)
                 res(j,k) = res(j,k)*stds(j,0);
             
-        MatrixXdr resid(num_snp, Nz*phenocount);
+        MatrixXdr resid(num_snp, Nz*num_dif_grm);
         MatrixXdr inter = means.cwiseProduct(stds);
         resid = inter * zb_sum;
         MatrixXdr inter_zb = res - resid;
        
 
-	for(int k=0; k<(Nz*phenocount); k++)
+	for(int k=0; k<(Nz*num_dif_grm); k++)
             for(int j=0; j<num_snp;j++)
                 inter_zb(j,k) =inter_zb(j,k) *stds(j,0);
        MatrixXdr new_zb = inter_zb.transpose();
-       MatrixXdr new_res(Nz*phenocount, Nindv);
+       MatrixXdr new_res(Nz*num_dif_grm, Nindv);
        
 	
 	 if(use_mailman==true)
-	    multiply_y_post_fast(new_zb, Nz*phenocount, new_res, false);
+	    multiply_y_post_fast(new_zb, Nz*num_dif_grm, new_res, false);
 	 else
 	    new_res=new_zb*gen;	
 
-       MatrixXdr new_resid(Nz*phenocount, num_snp);
+       MatrixXdr new_resid(Nz*num_dif_grm, num_snp);
        MatrixXdr zb_scale_sum = new_zb * means;
        new_resid = zb_scale_sum * MatrixXdr::Constant(1,Nindv, 1);
 
@@ -741,7 +743,7 @@ MatrixXdr  compute_XXz (int num_snp){
                       /// new zb 
        MatrixXdr temp=new_res - new_resid;
 
-       for(int k=0;k<phenocount;k++)
+       for(int k=0;k<num_dif_grm;k++)
 	for (int i=0;i<Nz;i++)
            for(int j=0;j<Nindv;j++)
                  temp((k*Nz)+i,j)=temp((k*Nz)+i,j)*mask(j,k);
@@ -763,11 +765,11 @@ MatrixXdr  compute_XXUz (int num_snp){
            for(int j=0;j<Nindv;j++)
                  all_Uzb(j,i)=all_Uzb(j,i)*mask(j,0);
 */
-         res.resize(num_snp, Nz*phenocount);
+         res.resize(num_snp, Nz*num_dif_grm);
 
 
         if(use_mailman==true)
-                multiply_y_pre_fast(all_Uzb,Nz*phenocount,res, false);
+                multiply_y_pre_fast(all_Uzb,Nz*num_dif_grm,res, false);
         else
                 res=gen*all_Uzb;
   
@@ -776,28 +778,28 @@ MatrixXdr  compute_XXUz (int num_snp){
 
 
         for(int j=0; j<num_snp; j++)
-            for(int k=0; k<(Nz*phenocount);k++)
+            for(int k=0; k<(Nz*num_dif_grm);k++)
                 res(j,k) = res(j,k)*stds(j,0);
 
-        MatrixXdr resid(num_snp, Nz*phenocount);
+        MatrixXdr resid(num_snp, Nz*num_dif_grm);
         MatrixXdr inter = means.cwiseProduct(stds);
         resid = inter * zb_sum;
         MatrixXdr inter_zb = res - resid;
 
 
-        for(int k=0; k<(Nz*phenocount); k++)
+        for(int k=0; k<(Nz*num_dif_grm); k++)
             for(int j=0; j<num_snp;j++)
                 inter_zb(j,k) =inter_zb(j,k) *stds(j,0);
        MatrixXdr new_zb = inter_zb.transpose();
-       MatrixXdr new_res(Nz*phenocount, Nindv);
+       MatrixXdr new_res(Nz*num_dif_grm, Nindv);
 
 
          if(use_mailman==true)
-            multiply_y_post_fast(new_zb, Nz*phenocount, new_res, false);
+            multiply_y_post_fast(new_zb, Nz*num_dif_grm, new_res, false);
          else
             new_res=new_zb*gen;
 
-       MatrixXdr new_resid(Nz*phenocount, num_snp);
+       MatrixXdr new_resid(Nz*num_dif_grm, num_snp);
        MatrixXdr zb_scale_sum = new_zb * means;
        new_resid = zb_scale_sum * MatrixXdr::Constant(1,Nindv, 1);
 
@@ -805,7 +807,7 @@ MatrixXdr  compute_XXUz (int num_snp){
                       /// new zb 
        MatrixXdr temp=new_res - new_resid;
 
-	for(int k=0;k<phenocount;k++)
+	for(int k=0;k<num_dif_grm;k++)
           for (int i=0;i<Nz;i++)
            for(int j=0;j<Nindv;j++)
                  temp((k*Nz)+i,j)=temp((k*Nz)+i,j)*mask(j,k);
@@ -1621,7 +1623,7 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
 	 output=compute_XXz(num_snp);
 
 	 temp_sze=Nbin*Nz*2;
-	for(int phen_index=0;phen_index<phenocount;phen_index++){
+	for(int phen_index=0;phen_index<num_dif_grm;phen_index++){
 	   for (int z_index=0;z_index<Nz;z_index++){
 		//if(num_snp!=len[bin_index])
                  //XXz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index)=output.col(z_index);
@@ -1632,10 +1634,15 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
 
 		 if(both_side_cov==true) {
 		  vec1=output.col((Nz*phen_index)+z_index);
-		  mat_mask=mask.col(phen_index).replicate(1,cov_num);
-     		  temp_cov=covariate.cwiseProduct(mat_mask);
 
-		  w1=temp_cov.transpose()*vec1;
+		  if(exact_pheno==true){
+		  	mat_mask=mask.col(phen_index).replicate(1,cov_num);
+     		  	temp_cov=covariate.cwiseProduct(mat_mask);
+		  	w1=temp_cov.transpose()*vec1;
+		  }
+		  else{
+		  	w1=covariate.transpose()*vec1;
+		  }
                   w2=Q*w1;
                   w3=temp_cov*w2;
 		  //if(num_snp!=len[bin_index])
@@ -1652,7 +1659,7 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
 
 	   if (both_side_cov==true){
 	      output=compute_XXUz(num_snp); 
-	     	for(int phen_index=0;phen_index<phenocount;phen_index++){
+	     	for(int phen_index=0;phen_index<num_dif_grm;phen_index++){
 	     	 for (int z_index=0;z_index<Nz;z_index++){
         	      	    // if(num_snp!=len[bin_index])
 			   //XXUz.col((bin_index*(Njack+1)*Nz)+(jack_index*Nz)+z_index)=output.col(z_index);
@@ -1715,20 +1722,31 @@ for (int jack_index=0;jack_index<Njack;jack_index++){
 cout<<" Reading and computing  of all blocks are finished"<<endl;
 
 if(pass_num==1){
+int temp_rep_index;
 for (int rep_index=0 ; rep_index<phenocount; rep_index++){
         cout<<"pheno: "<<rep_index<<endl;
+    	if(exact_pheno==true)
+		 temp_rep_index=rep_index;
+        else
+		temp_rep_index=0;
+
 	for (int i=0;i<Nbin;i++){
 	for (int j=i;j<Nbin;j++){
-                B1=XXz.block(0,(rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
-                B2=XXz.block(0,(rep_index*temp_sze)+(j*2*Nz)+Nz,Nindv,Nz);
+                B1=XXz.block(0,(temp_rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
+                B2=XXz.block(0,(temp_rep_index*temp_sze)+(j*2*Nz)+Nz,Nindv,Nz);
                 C1=B1.array()*B2.array();
                 C2=C1.colwise().sum();
                 trkij=C2.sum();
                 
                 if(both_side_cov==true){
+
+		     if(exact_pheno==true){
 			mat_mask=mask.col(rep_index).replicate(1,cov_num);
                         temp_cov=covariate.cwiseProduct(mat_mask);                
-
+		     }
+		     else{
+			 temp_cov=covariate;
+		     }
                         h1=temp_cov.transpose()*B1;
                         h2=Q*h1;
                         h3=temp_cov*h2;
@@ -1737,8 +1755,8 @@ for (int rep_index=0 ; rep_index<phenocount; rep_index++){
                         trkij_res1=C2.sum();
                         
 
-                        B1=XXUz.block(0,(rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
-                        B2=UXXz.block(0,(rep_index*temp_sze)+(j*2*Nz)+Nz,Nindv,Nz);
+                        B1=XXUz.block(0,(temp_rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
+                        B2=UXXz.block(0,(temp_rep_index*temp_sze)+(j*2*Nz)+Nz,Nindv,Nz);
                         C1=B1.array()*B2.array();
                         C2=C1.colwise().sum();
                         trkij_res3=C2.sum();
@@ -1754,15 +1772,15 @@ for (int rep_index=0 ; rep_index<phenocount; rep_index++){
                 
         }
       }     
-  
+ 
 
       for (int i=0;i<Nbin;i++){
 		c_yky(i,0)=yXXy((i*phenocount)+rep_index,0)/len[i];	
 		b_trk(i,0)=mask.col(rep_index).sum();
 
 		if(both_side_cov==true){
-                B1=XXz.block(0,(rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
-		MatrixXdr sub_allU=all_Uzb.block(0,Nz*rep_index,Nindv,Nz);
+                B1=XXz.block(0,(temp_rep_index*temp_sze)+(i*2*Nz)+Nz,Nindv,Nz);
+		MatrixXdr sub_allU=all_Uzb.block(0,Nz*temp_rep_index,Nindv,Nz);
                 C1=B1.array()*sub_allU.array();
                 C2=C1.colwise().sum();
                 tk_res=C2.sum();
@@ -1871,6 +1889,16 @@ cout<<"Number of Indvs :"<<Nindv<<endl;
 
 k=Nz*phenocount;
 
+exact_pheno=command_line_opts.exact;
+if(exact_pheno==true){
+	num_dif_grm=phenocount;
+	cout<<"Excluding different  missing indvs from GRM for every pheontype"<<endl;
+}
+else{
+	num_dif_grm=1;
+	cout<<"Including all indvs in computing GRM for all  phenotypes"<<endl;
+}
+
 std::string covfile=command_line_opts.COVARIATE_FILE_PATH;
 std::string covname="";
 if(covfile!=""){
@@ -1936,7 +1964,7 @@ for (int i=0;i<phenocount;i++){
 
 MatrixXdr temp_rand;
 temp_rand.resize(Nindv,Nz);
-all_zb= MatrixXdr::Random(Nindv,Nz*phenocount);
+all_zb= MatrixXdr::Random(Nindv,Nz*num_dif_grm);
 
 boost::mt19937 seedr;
 seedr.seed(std::time(0));
@@ -1948,20 +1976,27 @@ for (int i=0;i<Nz;i++)
       temp_rand(j,i)=z_vec();
 
 
-
+if(exact_pheno==true){
 for(int k=0;k<phenocount;k++)
    for(int i=0;i<Nz;i++)
    	for(int j=0;j<Nindv;j++)
    	   all_zb(j,(Nz*k)+i)=temp_rand(j,i)*mask(j,k);
+}
+else{
 
+all_zb=temp_rand;
+
+}
 
 if(both_side_cov==true){
 
-all_Uzb.resize(Nindv,Nz*phenocount);
+all_Uzb.resize(Nindv,Nz*num_dif_grm);
 MatrixXdr w1;
 MatrixXdr w2;
 MatrixXdr w3;
-for(int k=0;k<phenocount;k++){
+
+if(exact_pheno==true){
+   for(int k=0;k<phenocount;k++){
 	mat_mask=mask.col(k).replicate(1,cov_num);
 	temp_cov=covariate.cwiseProduct(mat_mask);
 	for (int j=0;j<Nz;j++){
@@ -1970,7 +2005,18 @@ for(int k=0;k<phenocount;k++){
 		  w3=temp_cov*w2;
  		  all_Uzb.col((Nz*k)+j)=w3;
 	}
+   }
 }
+else{
+    for (int j=0;j<Nz;j++){
+        w1=covariate.transpose()*all_zb.col(j);
+        w2=Q*w1;
+        w3=temp_cov*w2;
+        all_Uzb.col(j)=w3;
+    }
+
+}
+
 
 }
 
@@ -1981,11 +2027,11 @@ MatrixXdr output;
 //e
 //Njack=1;
 
-XXz=MatrixXdr::Zero(Nindv,phenocount*Nbin*Nz*2);
+XXz=MatrixXdr::Zero(Nindv,num_dif_grm*Nbin*Nz*2);
 
 if(both_side_cov==true){
-UXXz=MatrixXdr::Zero(Nindv,phenocount*Nbin*Nz*2);
-XXUz=MatrixXdr::Zero(Nindv,phenocount*Nbin*Nz*2);
+UXXz=MatrixXdr::Zero(Nindv,num_dif_grm*Nbin*Nz*2);
+XXUz=MatrixXdr::Zero(Nindv,num_dif_grm*Nbin*Nz*2);
 }
 yXXy=MatrixXdr::Zero(phenocount*Nbin,1);
 
@@ -2055,6 +2101,7 @@ outfile<<"h^2_T"<<endl;
 cout<<"h^2_T"<<endl;
 for (int phen_index=0;phen_index<phenocount;phen_index++){
     cout<<phen_index<<" ";
+    outfile<<phen_index<<" ";
     for(int i=0;i<(Nbin+1);i++){
      	cout<<all_point_est(i,phen_index)<<" ";
         outfile<<all_point_est(i,phen_index)<<" ";  

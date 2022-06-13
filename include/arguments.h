@@ -32,6 +32,7 @@ struct options{
 	bool missing;
 	bool text_version;
 	double beta;
+	bool exact;
 };
 
 template<typename T, typename U>
@@ -206,7 +207,7 @@ void parse_args(int argc, char const *argv[]){
 	command_line_opts.fast_mode=true;
 	command_line_opts.missing=false;
 	command_line_opts.text_version = false;
-	
+	command_line_opts.exact = false;
 
 	if(argc<3){
 		cout<<"Correct Usage is "<<argv[0]<<" -p <parameter file>"<<endl;
@@ -306,7 +307,8 @@ void parse_args(int argc, char const *argv[]){
 				command_line_opts.fast_mode=false;
 			else if(strcmp(argv[i],"-txt")==0)
 				command_line_opts.text_version=true;
-			
+			else if(strcmp(argv[i],"-exact")==0)
+                                command_line_opts.exact=true;	
 			else{
 				cout<<"Not Enough or Invalid arguments"<<endl;
 				cout<<"Correct Usage is "<<argv[0]<<" -g <genotype file> -k <num_of_evec> -b <num_of_zb/10>  -v (for debugmode) -a (for getting accuracy)"<<endl;
