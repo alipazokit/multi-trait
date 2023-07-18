@@ -2007,8 +2007,8 @@ cout<<"h^2_"<<i<<" ";
 outfile<<"se_h^2_"<<i<<" ";
 cout<<"se_h^2_"<<i<<" ";
 }
-outfile<<"h^2_T"<<endl;
-cout<<"h^2_T"<<endl;
+outfile<<"h^2_T"<<" ";
+cout<<"h^2_T"<<" ";
 outfile<<"se_h^2_T"<<endl;
 cout<<"se_h^2_T"<<endl;
 for (int phen_index=0;phen_index<phenocount;phen_index++){
